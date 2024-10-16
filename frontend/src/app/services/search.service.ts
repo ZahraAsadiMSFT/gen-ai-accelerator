@@ -1,8 +1,7 @@
 import { Injectable } from "@angular/core";
-import { HttpClient, HttpHeaders } from "@angular/common/http";
-import { Observable, of } from "rxjs";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
 import { switchMap, map } from "rxjs/operators";
-import { environment } from '../../environments/environment.prod';
 
 interface Document {
   id: string;
@@ -17,13 +16,6 @@ interface Document {
   providedIn: "root",
 })
 export class SearchService {
-  private embeddingApiUrl = environment.embeddingApiUrl;
-  private embeddingApiKey = environment.embeddingApiKey;
-  private searchApiUrl = environment.searchApiUrl;
-  private searchApiKey = environment.searchApiKey;
-  private generateSynthesisApiUrl = environment.generateSynthesisApiUrl;
-  private generateSynthesisApiCode = environment.generateSynthesisApiCode;
-
   constructor(private http: HttpClient) {}
 
   mapScoreToRelevance(score: number): string {
@@ -36,47 +28,21 @@ export class SearchService {
     }
   }
 
-  // SearchDocument mock API
+  // SearchDocument API
   searchDocument(query: string): Observable<Document[]> {
-    if (!this.embeddingApiUrl) {
-      throw new Error("EMBEDDING_API_URL is not defined");
-    }
-    if (!this.embeddingApiKey) {
-      throw new Error("EMBEDDING_API_KEY is not defined");
-    }
-
-    const embeddingHeaders = new HttpHeaders({
-      "Content-Type": "application/json",
-      "api-key": this.embeddingApiKey,
-    });
-
+    // Prepare the embedding body
     const embeddingBody = {
       input: query,
     };
 
-    // Call the embedding API
+    // Call the server endpoint to get embedding
     return this.http
-      .post<any>(this.embeddingApiUrl, embeddingBody, {
-        headers: embeddingHeaders,
-      })
+      .post<any>('/api/get-embedding', embeddingBody)
       .pipe(
         switchMap((embeddingResponse) => {
-          // Extract the embedding vector from the response
           const embeddingVector = embeddingResponse.data[0].embedding;
-          if (!this.searchApiUrl) {
-            throw new Error("SEARCH_API_URL is not defined");
-          }
-          if (!this.searchApiKey) {
-            throw new Error("SEARCH_API_KEY is not defined");
-          }
 
-          // Set up headers for the search API
-          const searchHeaders = new HttpHeaders({
-            "Content-Type": "application/json",
-            "api-key": this.searchApiKey,
-          });
-
-          // Prepare the request body for the search API
+          // Prepare the search body
           const searchBody = {
             search: query,
             vectorQueries: [
@@ -90,17 +56,14 @@ export class SearchService {
             select: "file_name,summary,id",
           };
 
-          // Call the AI Search Endpoint
-          return this.http.post<any>(this.searchApiUrl, searchBody, {
-            headers: searchHeaders,
-          });
+          // Call the server endpoint to search documents
+          return this.http.post<any>('/api/search-documents', searchBody);
         }),
         map((searchResponse) => {
-          // Map the search response to an array of Document objects
           const documents: Document[] = searchResponse.value.map(
             (item: any) => ({
               id: item.id,
-              publishedDate: "2022-03-11", // TODO Get the published date from the document
+              publishedDate: "2022-03-11", // TODO: Update with actual date
               fileName: item.file_name,
               summary: item.summary,
               relevance: this.mapScoreToRelevance(item["@search.score"]),
@@ -112,22 +75,9 @@ export class SearchService {
       );
   }
 
-  // GenerateSynthesis Mock API
+  // GenerateSynthesis API
   generateSynthesis(requestBody: any): Observable<any> {
     console.log("API Request Body: ", requestBody);
-    if (!this.generateSynthesisApiUrl) {
-      throw new Error("GENERATE_API_URL is not defined");
-    }
-    if (!this.generateSynthesisApiCode) {
-      throw new Error("GENERATE_API_KEY is not defined");
-    }
-
-    const synthesisHeaders = new HttpHeaders({
-      "Content-Type": "application/json",
-    });
-
-    const fullUrl = `${this.generateSynthesisApiUrl}?code=${this.generateSynthesisApiCode}`;
-
-    return this.http.post<any>(fullUrl, requestBody, { headers: synthesisHeaders });
+    return this.http.post<any>('/api/generate-synthesis', requestBody);
   }
 }
