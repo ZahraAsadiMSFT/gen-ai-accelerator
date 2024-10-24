@@ -44,8 +44,9 @@ def generate_knowledge_scan(query, doc_ids):
     full_content_texts = []
     keywords = set()
     resources_searched = set()
+    references = []
 
-    for pdf_name, docs in doc_groups.items():
+    for i, (pdf_name, docs) in enumerate(doc_groups.items(), 1):
         # Combine summaries and content texts for each PDF
         pdf_summaries = [doc['summary'] for doc in docs]
         pdf_content_texts = [doc['content_text'] for doc in docs]
@@ -59,6 +60,9 @@ def generate_knowledge_scan(query, doc_ids):
             "summary": combined_summary
         })
 
+        # Add reference for superscript
+        references.append(f"{pdf_name} ({i})")
+
         full_content_texts.extend(pdf_content_texts)
 
         # Extracting keywords and resources (assuming they exist in the metadata)
@@ -68,10 +72,28 @@ def generate_knowledge_scan(query, doc_ids):
             if 'resource' in doc:
                 resources_searched.add(doc['resource'])
 
+    # Generate overall summary by concatenating summaries
+    overall_summary_prompt = "Can you generate an overall summary based on the following document summaries, adding a superscript reference number for each document when applicable?\n\n"
+    for i, summary_info in enumerate(combined_summaries, 1):
+        overall_summary_prompt += f"{summary_info['summary']} [{i}]\n"
+
+    # Get overall summary from GPT
+    overall_summary = summary.generate_prompt(
+        overall_summary_prompt,
+        "You are an AI assistant that generates overall summaries.",
+        aoai_key,
+        aoai_url,
+        model,
+        aoai_version_completion
+    )
+
+    # Build the final knowledge scan response
     knowledge_scan = {
         "id": str(uuid.uuid4()),  # Generate a unique ID for each knowledge scan
         "query": query,
         "combined_summaries": combined_summaries,
+        "overall_summary": overall_summary,
+        "references": references,  # References for superscripts
         "content_texts": full_content_texts,
         "doc_ids": doc_ids,
         "general_notes": f"Generated based on query: {query}. This scan covers documents from various sources and provides a summarized overview.",
@@ -114,8 +136,3 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"Error in GenerateKnowledgeScan function: {e}")
         return func.HttpResponse(f"Error: {e}", status_code=500)
-
-
-
-
-
