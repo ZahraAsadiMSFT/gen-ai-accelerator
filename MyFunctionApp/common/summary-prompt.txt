@@ -1,4 +1,10 @@
-Summary the following text in 2 sentences.
+Please produce a comprehensive, well-structured summary of the following text. Format your summary in a way that resembles an extended abstract for an academic article, including:
+
+- **Background:** Provide context, including prevalence, key issues, and relevance of the topic.
+- **Methods (if applicable):** Describe the study design, data sources, populations, and analyses mentioned.
+- **Results/Findings:** Summarize the main outcomes, key themes, or evidence presented.
+- **Discussion/Conclusions:** Explain the implications, significance, potential barriers, enablers, and future directions noted in the text.
+
+Your summary should be detailed enough to stand on its own, giving a reader a clear understanding of what the text covers without needing the original document.
 
 Text:
-
