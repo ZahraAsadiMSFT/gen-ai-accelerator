@@ -43,7 +43,7 @@ def generate_embeddings_and_summaries(blob_content, blob_name):
             prompt_template = file.read()
 
         prompt = prompt_template + data
-        summary_str = summary.generate_prompt(prompt, "You are an AI assistant that summarizes texts.", aoai_key, aoai_url, model, aoai_version_completion)
+        summary_str = summary.generate_prompt(prompt, "You are an AI assistant that produces comprehensive, structured summaries of academic or informational texts. Your summaries should provide clear background context, methodological details, main findings, and conclusions, similar to a scholarly abstract.", aoai_key, aoai_url, model, aoai_version_completion)
 
         document = {
             "id": str(uuid.uuid4()),  # Generate a unique ID for each document
