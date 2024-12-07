@@ -10,6 +10,7 @@ var appServicePlanName = '${projectcode}-z-dev-asp'
 var functionAppName = '${projectcode}-z-dev-func'
 var storageAccountFunctionName = '${toLower('${projectcode}${uniqueString(resourceGroup().id, functionAppName)}func')}'
 var appInsightsName = '${projectcode}-z-dev-ai'
+var webAppName = '${projectcode}-z-dev-webapp'
 
 resource azure_key_vault 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
@@ -181,5 +182,34 @@ resource azure_function_app 'Microsoft.Web/sites@2021-02-01' = {
   }
 }
 
+resource azure_web_app 'Microsoft.Web/sites@2021-02-01' = {
+  name: webAppName
+  location: location
+  kind: 'app,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: azure_app_service_plan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'NODE|18-lts' 
+      appSettings: [
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: app_insights.properties.InstrumentationKey
+        }
+        {
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
+          value: '18-lts'
+        }
+      ]
+      ftpsState: 'FtpsOnly'
+      minTlsVersion: '1.2'
+    }
+  }
+}
+
 output functionAppHostName string = azure_function_app.properties.defaultHostName
+output webAppHostName string = azure_web_app.properties.defaultHostName
 
